@@ -78,8 +78,15 @@ async def send_code():
 if __name__ == "__main__":
     print("🚀 Сервер запущен")
    
-PORT = int(os.environ.get("PORT", 5701))  # Берем порт из окружения, иначе 5701
-asyncio.run(app.run(host="0.0.0.0", port=PORT, debug=True))
+PORT = int(os.environ.get("PORT", 5701))  # Берем порт из окружения, иначе 5701 # Получаем порт от Render
+
+if __name__ == "__main__":
+    config = Config()
+    config.bind = [f"0.0.0.0:{PORT}"]  # Указываем порт и хост
+    config.workers = 1  # Количество воркеров (можно увеличить)
+
+    asyncio.run(hypercorn.asyncio.serve(app, config))  # Запускаем Hypercorn
+
 
 
 

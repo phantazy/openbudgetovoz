@@ -76,8 +76,11 @@ async def send_code():
         return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
-    print("🚀 Сервер запущен на http://127.0.0.1:5701")
-    asyncio.run(app.run(host="127.0.0.1", port=5701, debug=True))
+    print("🚀 Сервер запущен")
+   
+PORT = int(os.environ.get("PORT", 5701))  # Берем порт из окружения, иначе 5701
+asyncio.run(app.run(host="0.0.0.0", port=PORT, debug=True))
+
 
 
 

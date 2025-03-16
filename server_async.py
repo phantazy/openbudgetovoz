@@ -9,28 +9,29 @@ from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
 
 # --- Настройки ---
-API_ID = int(os.getenv("API_ID", 26595249))  # Берем API_ID из переменных окружения
-API_HASH = os.getenv("API_HASH", "9480dce5299fb30b4e520242dd6d87d8")  # Берем API_HASH
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")  # Берем URL Redis из окружения
+API_ID = int(os.getenv("API_ID", 26595249))  
+API_HASH = os.getenv("API_HASH", "9480dce5299fb30b4e520242dd6d87d8")  
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")  
 
-# Подключение к Redis
-redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+# Подключение к Redis (убрали decode_responses=True)
+redis_client = redis.from_url(REDIS_URL)
 
 app = Quart(__name__)
 app = cors(app, allow_origin="*")
 
 async def get_client(phone_number):
     """ Создает или загружает TelegramClient из Redis """
-    session_data = redis_client.get(f"session:{phone_number}")
-    session_path = f"/tmp/{phone_number}.session"  # Временная папка в контейнере
+    session_path = f"/tmp/{phone_number}.session"  
 
+    # Получаем бинарные данные из Redis
+    session_data = redis_client.get(f"session:{phone_number}")  
     if session_data:
         with open(session_path, "wb") as f:
-            f.write(session_data.encode())  # Восстанавливаем session-файл
+            f.write(session_data)  # Сохраняем файл как бинарные данные
 
     device_model = "OpenBudget"
     
-    client = TelegramClient(session_path, API_ID, API_HASH)
+    client = TelegramClient(session_path, API_ID, API_HASH, device_model="OpenBudget")
     await client.connect()
     return client
 
@@ -40,7 +41,7 @@ async def save_session(phone_number):
 
     if os.path.exists(session_path):
         with open(session_path, "rb") as f:
-            redis_client.set(f"session:{phone_number}", f.read())  # Сохраняем в Redis
+            redis_client.set(f"session:{phone_number}", f.read())  # Храним в Redis бинарные данные
 
 @app.post("/send_phone")
 async def send_phone():
@@ -81,7 +82,7 @@ async def send_code():
 
         if not await client.is_user_authorized():
             await client.sign_in(phone_number, code, phone_code_hash=phone_code_hash)
-            await save_session(phone_number)  # Сохраняем сессию после входа
+            await save_session(phone_number)  
 
         return jsonify({"success": True, "message": "Вход выполнен"}), 200
 
@@ -96,6 +97,7 @@ if __name__ == "__main__":
     config = Config()
     config.bind = [f"0.0.0.0:{PORT}"]
     asyncio.run(hypercorn.asyncio.serve(app, config))
+
 
 
 

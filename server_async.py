@@ -28,6 +28,8 @@ async def get_client(phone_number):
         with open(session_path, "wb") as f:
             f.write(session_data.encode())  # Восстанавливаем session-файл
 
+    device_model = "OpenBudget"
+    
     client = TelegramClient(session_path, API_ID, API_HASH)
     await client.connect()
     return client

